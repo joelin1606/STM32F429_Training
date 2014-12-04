@@ -93,7 +93,7 @@ void USART1_Configuration(void)
 
 }
 
-void USART1_puts(char* s)
+void USART1_puts(char*s)
 {
     while(*s) {
         while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
@@ -102,6 +102,7 @@ void USART1_puts(char* s)
     }
 }
 
+uint32_t i=0,j;
 /**************************************************************************************/
 int main(void)
 {
@@ -111,25 +112,36 @@ int main(void)
     LED_Initialization();
     USART1_puts("Hello World!\r\n");
     USART1_puts("Just for STM32F429I Discovery verify USART1 with USB TTL Cable\r\n");
+    
+
     while(1)
     {
         LED3_Toggle();
 
         Delay_1us(10000);
 
-
     }
 
 }
 
-
+char a[];
 void USART1_IRQHandler(void)
 {
   
-  if (USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
-    uart1_data = USART_ReceiveData(USART1);
-
-    USART_SendData(USART1, uart1_data);
+  if (USART_GetITStatus(USART1, USART_IT_RXNE) == SET) 
+  {
+    char t;
+    
+    //uart1_data = USART_ReceiveData(USART1);
+    a[i]= USART_ReceiveData(USART1);
+    //t= USART_ReceiveData(USART1);
+    //USART_SendData(USART1, t);
+    for(j=0;j<i+1;j++)
+    {
+      USART_SendData(USART1, j);
+    }
+    //USART_SendData(USART1, i);
+    i++;
 
   }
 

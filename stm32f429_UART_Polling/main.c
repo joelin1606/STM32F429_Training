@@ -56,12 +56,21 @@ void LED_Initialization(void){
 
 }
 
-void LED3_Toggle(void){
+void LED3_Toggle(void)
+{
 
 
   GPIOG->ODR ^= GPIO_Pin_13;
 
 }
+void LED4_Toggle(void)
+{
+
+
+  GPIOG->ODR ^= GPIO_Pin_14;
+
+}
+
 
 void USART1_Configuration(void)
 {
@@ -104,15 +113,25 @@ int main(void)
     LED_Initialization();
     USART1_puts("Hello World!\r\n");
     USART1_puts("Just for STM32F429I Discovery verify USART1 with USB TTL Cable\r\n");
+
     while(1)
     {
-        LED3_Toggle();
-
-        if(USART_GetFlagStatus(USART1, USART_FLAG_RXNE) != RESET){
-
+        if(USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == SET){
         char t = USART_ReceiveData(USART1);
+
+        if (t=='a')
+        {
+          LED4_Toggle();
+        }
+        if (t=='b')
+        {
+          LED3_Toggle();
+        }
+
+
         while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
         USART_SendData(USART1, t);
+
 
         }
 
