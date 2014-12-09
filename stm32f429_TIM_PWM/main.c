@@ -105,30 +105,137 @@ void PWM_Initialization(void)
 }
 
 
+
+
+void USART1_Configuration(void)
+{
+    USART_InitTypeDef USART_InitStructure;
+
+    /* USARTx configuration ------------------------------------------------------*/
+    /* USARTx configured as follow:
+     *  - BaudRate = 57600 baud
+     *  - Word Length = 8 Bits
+     *  - One Stop Bit
+     *  - No parity
+     *  - Hardware flow control disabled (RTS and CTS signals)
+     *  - Receive and transmit enabled
+     */
+    USART_InitStructure.USART_BaudRate = 57600;
+    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+    USART_InitStructure.USART_StopBits = USART_StopBits_1;
+    USART_InitStructure.USART_Parity = USART_Parity_No;
+    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+    USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+    USART_Init(USART1, &USART_InitStructure);
+    USART_Cmd(USART1, ENABLE);
+
+    USART_ClearFlag(USART1, USART_FLAG_TC);
+
+    USART_ITConfig(USART1, USART_IT_TXE, DISABLE);
+    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
+
+    /* NVIC Initialization */
+    NVIC_InitTypeDef NVIC_InitStruct = {
+      .NVIC_IRQChannel = USART1_IRQn,
+      .NVIC_IRQChannelPreemptionPriority = 0,
+      .NVIC_IRQChannelSubPriority = 0,
+      .NVIC_IRQChannelCmd = ENABLE
+    };
+    NVIC_Init(&NVIC_InitStruct);
+
+}
+
+void USART1_puts(char* s)
+{
+    while(*s) {
+        while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
+        USART_SendData(USART1, *s);
+        s++;
+    }
+}
+
+void LED3_On(void){
+
+  GPIO_SetBits(GPIOG,GPIO_Pin_13);
+
+}
+
 void LED3_Toggle(void){
 
 
   GPIOG->ODR ^= GPIO_Pin_13;
 
 }
+/**************************************************************************************/
+uint8_t t=0;// USART input and output
+uint8_t q[5];//input array
+uint8_t checksum=0x00;
+uint8_t PWMoutput=0;
+uint8_t c10=0,c10output;;
 
 /**************************************************************************************/
 int main(void)
 {
-    uint16_t pwm_out=0;
+    //uint16_t pwm_out=0;
     RCC_Configuration();
     GPIO_Configuration();
     LED_Initialization();
     PWM_Initialization();
+    USART1_Configuration();
 
-    TIM1->CCR2 = 1000;
+    TIM1->CCR2 = 0;
+    // USART1_puts("HW3 TIM PWM\r\n");
     while(1)
     {
-        TIM1->CCR2 = 1000 + pwm_out/65;
-        //TIM_SetCompare2(TIM_TypeDef* TIMx, uint32_t Compare2);
-        pwm_out++;
-        Delay_1us(10);
+      checksum=q[0]+q[1]+q[2]+q[3];
+
+        if(q[0]==0x91)
+        {
+          if(q[1]==0x71)
+          {
+            if(q[2]==0x01)
+            {
+              if(q[4]==checksum)
+              {
+                PWMoutput=q[3];
+                if(q[3]<0x03)
+                {
+                  PWMoutput=0x03;
+                }
+                if(q[3]>0xfc)
+                {
+                  PWMoutput=0xfc;
+                }
+                //Trans16to10();
+                //c10output=c10*4+988;
+                //USART_SendData(USART1, c10output);
+                TIM1->CCR2 =988+PWMoutput*4;
+                //Delay_1us(200000);
+                LED3_Toggle();
+              }
+            }
+          }
+        }
+        //pwm_out++;
+        //Delay_1us(1000);
+        //TIM1->CCR2 =255;
 
     }
+
+}
+
+void USART1_IRQHandler(void)//USART interrupt function
+{
+  
+  if (USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) 
+  {
+    t = USART_ReceiveData(USART1);
+    USART_SendData(USART1, t);
+    q[0]=q[1];
+    q[1]=q[2];
+    q[2]=q[3];
+    q[3]=q[4];
+    q[4]=t;
+  }
 
 }

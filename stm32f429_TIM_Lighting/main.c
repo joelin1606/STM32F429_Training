@@ -81,7 +81,7 @@ void Timer5_Initialization(void)
   /* -- Timer Configuration --------------------------------------------------- */
   TIM_DeInit(TIM5);
   TIM_TimeBaseInitTypeDef TIM_TimeBaseStruct;
-  TIM_TimeBaseStruct.TIM_Period = 25000 - 1 ;  //250ms  --> 4Hz
+  TIM_TimeBaseStruct.TIM_Period = 200000 - 1 ;  //250ms  --> 4Hz
   TIM_TimeBaseStruct.TIM_Prescaler = 9 - 1; // Prescaled by 90 -> = 0.1M(10us)
   TIM_TimeBaseStruct.TIM_ClockDivision = TIM_CKD_DIV1; // Div by one -> 90 MHz (Now RCC_DCKCFGR_TIMPRE is configured to divide clock by two)
   TIM_TimeBaseStruct.TIM_CounterMode = TIM_CounterMode_Up;
@@ -149,6 +149,7 @@ void TIM4_IRQHandler()
 {
         if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET){
            LED4_Off();
+           LED3_Off();
 
             TIM_Cmd(TIM4, DISABLE);
 
@@ -156,30 +157,34 @@ void TIM4_IRQHandler()
         }
 }
 
-uint16_t HighTime=20000; //control high time
+uint16_t HighTime=15000; //control high time
 uint8_t Direction=0;     // control direction of amplitude change
 void TIM5_IRQHandler()
 {
-        if (TIM_GetITStatus(TIM5, TIM_IT_Update) != RESET){
+        if (TIM_GetITStatus(TIM5, TIM_IT_Update) != RESET)
+        {
            
-           LED4_On();
+           LED4_Toggle();
+           LED3_Toggle();
 
-           if(Direction == 0){
+          //  if(Direction == 0){
 
-                 HighTime -= 100;
+          //        HighTime -= 100;
 
-                 if(HighTime < 300){
-                  Direction =1;
-                 }
-          }else if(Direction == 1){
+          //        if(HighTime < 300)
+           // {
+          //         Direction =1;
+          //        }
+         // }
+         // else if(Direction == 1){
 
-                 HighTime += 100;
-                 if(HighTime > 23000){
-                  Direction =0;
-                 }
+          //        HighTime += 100;
+          //        if(HighTime > 23000){
+          //         Direction =0;
+          // }
 
 
-          }
+          // }
 
            TIM_SetCounter(TIM4, HighTime);
             TIM_Cmd(TIM4, ENABLE);
