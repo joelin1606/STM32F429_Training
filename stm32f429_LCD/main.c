@@ -91,12 +91,29 @@ int main(void)
 
     LCD_SetColors(LCD_COLOR_BLACK,LCD_COLOR_WHITE-1);
 
+
     LCD_DisplayStringLine(LINE(1), (uint8_t*)"     Ce-91     ");
+    
+
 
   LCD_SetLayer(LCD_BACKGROUND_LAYER);
+
+  uint16_t b=0;
+  uint8_t buff_transmit[100];
+
   while (1)
   {
+    b++;
+    if(b==999)
+      {
+        b=0;
+      }
+    LCD_SetColors(LCD_COLOR_BLACK,LCD_COLOR_WHITE-1);
+    LCD_SetLayer(LCD_FOREGROUND_LAYER);
 
+   
+    sprintf( (char *)buff_transmit,"      %d      ",b);
+    LCD_DisplayStringLine(LINE(2), buff_transmit);
     if(colorR_dir){
 
           colorR += 1;
@@ -136,6 +153,7 @@ int main(void)
       if(colorB<25) colorB_dir=1;
     }
 
+    LCD_SetLayer(LCD_BACKGROUND_LAYER);
     LCD_SetColors(ASSEMBLE_RGB(colorR, colorG, colorB),LCD_COLOR_BLACK);
     LCD_DrawFullRect(0,0,240,320);
 
