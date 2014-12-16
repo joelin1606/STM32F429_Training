@@ -23,8 +23,7 @@ int main(void)
 {
   uint8_t colorR =0 ,colorG =0 ,colorB =0 ;
   uint8_t colorR_dir =0 ,colorG_dir =0 ,colorB_dir =0 ;
-  char lcd_text_buff[100];
-
+  
 
   /* LCD initialization */
   LCD_Init();
@@ -110,10 +109,23 @@ int main(void)
       }
     LCD_SetColors(LCD_COLOR_BLACK,LCD_COLOR_WHITE-1);
     LCD_SetLayer(LCD_FOREGROUND_LAYER);
-
-   
     sprintf( (char *)buff_transmit,"      %d      ",b);
     LCD_DisplayStringLine(LINE(2), buff_transmit);
+
+    LCD_SetLayer(LCD_FOREGROUND_LAYER);
+    sprintf( (char *)buff_transmit,"      %d      ",b);
+    LCD_DisplayStringLine(LINE(3), buff_transmit);
+
+    LCD_SetLayer(LCD_FOREGROUND_LAYER);
+    sprintf( (char *)buff_transmit,"      %d      ",b);
+    LCD_DisplayStringLine(LINE(4), buff_transmit);
+
+    LCD_SetLayer(LCD_FOREGROUND_LAYER);
+    sprintf( (char *)buff_transmit,"      %d      ",b);
+    LCD_DisplayStringLine(LINE(5), buff_transmit);
+
+
+
     if(colorR_dir){
 
           colorR += 1;

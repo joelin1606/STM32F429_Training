@@ -176,7 +176,6 @@ uint8_t c10=0,c10output;;
 /**************************************************************************************/
 int main(void)
 {
-    //uint16_t pwm_out=0;
     RCC_Configuration();
     GPIO_Configuration();
     LED_Initialization();
@@ -184,7 +183,7 @@ int main(void)
     USART1_Configuration();
 
     TIM1->CCR2 = 0;
-    // USART1_puts("HW3 TIM PWM\r\n");
+    G
     while(1)
     {
       checksum=q[0]+q[1]+q[2]+q[3];
@@ -206,22 +205,13 @@ int main(void)
                 {
                   PWMoutput=0xfc;
                 }
-                //Trans16to10();
-                //c10output=c10*4+988;
-                //USART_SendData(USART1, c10output);
+
                 TIM1->CCR2 =988+PWMoutput*4;
-                //Delay_1us(200000);
-                LED3_Toggle();
               }
             }
           }
         }
-        //pwm_out++;
-        //Delay_1us(1000);
-        //TIM1->CCR2 =255;
-
     }
-
 }
 
 void USART1_IRQHandler(void)//USART interrupt function

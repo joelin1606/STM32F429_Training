@@ -10,6 +10,17 @@ static inline void Delay_1us(uint32_t nCnt_1us)
     for (nCnt = 13; nCnt != 0; nCnt--);
 }
 
+void DrawThickCircle(uint32_t x,uint32_t y,uint32_t radius, uint32_t thickness)
+{
+
+    LCD_SetTextColor(LCD_COLOR_BLACK);
+    LCD_DrawFullCircle(x, y, radius);
+    LCD_SetColors(LCD_COLOR_WHITE-1,LCD_COLOR_WHITE);
+    LCD_DrawFullCircle(x, y, radius-thickness);
+
+
+}
+
 void RCC_Configuration(void)
 {
       /* --------------------------- System Clocks Configuration -----------------*/
@@ -47,14 +58,16 @@ void ADC_Initialization(void)
   GPIO_InitTypeDef      GPIO_InitStructure;
 
   /* Enable ADC3, DMA2 and GPIO clocks ****************************************/
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOF, ENABLE);
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC3, ENABLE);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC2, ENABLE);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
 
   /* Configure ADC3 Channel7 pin as analog input ******************************/
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8|GPIO_Pin_9;
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_4| GPIO_Pin_5;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
   GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL ;
-  GPIO_Init(GPIOF, &GPIO_InitStructure);
+  GPIO_Init(GPIOC, &GPIO_InitStructure);
 
   /* ADC Common Init **********************************************************/
   ADC_CommonInitStructure.ADC_Mode = ADC_Mode_Independent;                     // No external trigger is connected
@@ -73,10 +86,33 @@ void ADC_Initialization(void)
   ADC_InitStructure.ADC_NbrOfConversion = 1;                                   // Convert only once
   ADC_Init(ADC3, &ADC_InitStructure);
 
-  /* ADC3 regular channel7 configuration *************************************/
-  ADC_RegularChannelConfig(ADC3, ADC_Channel_6, 1, ADC_SampleTime_3Cycles);
+/* ADC2 Init ****************************************************************/
+  ADC_InitStructure.ADC_Resolution = ADC_Resolution_12b;                       // Resolution 12 bits
+  ADC_InitStructure.ADC_ScanConvMode = DISABLE;                                // Use single channel 
+  ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;                           // Continue conversion
+  ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
+  ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T1_CC1;
+  ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;                       // Data bits shifted to right hand side (Low)
+  ADC_InitStructure.ADC_NbrOfConversion = 1;                                   // Convert only once
+  ADC_Init(ADC2, &ADC_InitStructure);
 
+/* ADC1 Init ****************************************************************/
+  ADC_InitStructure.ADC_Resolution = ADC_Resolution_12b;                       // Resolution 12 bits
+  ADC_InitStructure.ADC_ScanConvMode = DISABLE;                                // Use single channel 
+  ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;                           // Continue conversion
+  ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
+  ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T1_CC1;
+  ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;                       // Data bits shifted to right hand side (Low)
+  ADC_InitStructure.ADC_NbrOfConversion = 1;                                   // Convert only once
+  ADC_Init(ADC1, &ADC_InitStructure);
+
+  /* ADC3.ADC2.ADC1 regular channel configuration *************************************/
+  ADC_RegularChannelConfig(ADC3, ADC_Channel_13, 1, ADC_SampleTime_3Cycles);
+  ADC_RegularChannelConfig(ADC2, ADC_Channel_14, 1, ADC_SampleTime_3Cycles);
+  ADC_RegularChannelConfig(ADC1, ADC_Channel_15, 1, ADC_SampleTime_3Cycles);
   /* Enable ADC3 */
+  ADC_Cmd(ADC1, ENABLE);
+  ADC_Cmd(ADC2, ENABLE);
   ADC_Cmd(ADC3, ENABLE);
 }
 
@@ -142,18 +178,122 @@ void USART1_puts(char* s)
 uint8_t buff_transmit[100];
 int main(void)
 {
+  /**************************************************************************************/
+  /**************************************************************************************/
+  /**************************************************************************************/
+  uint8_t colorR =0 ,colorG =0 ,colorB =0 ;
+  uint8_t colorR_dir =0 ,colorG_dir =0 ,colorB_dir =0 ;
+  
 
+  /* LCD initialization */
+  LCD_Init();
+  
+  /* LCD Layer initialization */
+  LCD_LayerInit();
+    
+  LCD_SetLayer(LCD_FOREGROUND_LAYER);
+  LCD_SetColorKeying(0xFFFFFF);
+
+  /* Need to reload */
+  LTDC_ReloadConfig(LTDC_IMReload);
+
+  /* Enable the LTDC */
+  LTDC_Cmd(ENABLE);
+  
+  /* Set LCD foreground layer */
+
+  /* Clear the LCD */ 
+  LCD_Clear(LCD_COLOR_WHITE);
+  LCD_SetFont(&Font16x24);
+
+  LCD_SetLayer(LCD_BACKGROUND_LAYER);
+  LCD_SetColors(LCD_COLOR_BLACK,LCD_COLOR_WHITE);
+
+  LCD_DisplayStringLine(LINE(1), (uint8_t*)" LCD text print example ");
+  LCD_DisplayStringLine(LINE(2), (uint8_t*)" Ming6842 @ github");
+
+    LCD_SetLayer(LCD_FOREGROUND_LAYER);
+
+    LCD_SetColors(LCD_COLOR_WHITE,LCD_COLOR_WHITE);
+    LCD_DrawFullRect(0,0,240,320);
+
+    LCD_Clear(LCD_COLOR_WHITE);
+
+#define X_MIDDLE 120
+#define Y_MIDDLE 180
+
+    LCD_SetTextColor(LCD_COLOR_BLACK);
+    LCD_DrawUniLine(X_MIDDLE+75, Y_MIDDLE-75  , X_MIDDLE-75, Y_MIDDLE+75);
+    LCD_DrawUniLine(X_MIDDLE+75, Y_MIDDLE-75-1, X_MIDDLE-75, Y_MIDDLE+75-1);
+    LCD_DrawUniLine(X_MIDDLE+75, Y_MIDDLE-75+1, X_MIDDLE-75, Y_MIDDLE+75+1);
+
+    LCD_DrawUniLine(X_MIDDLE-75, Y_MIDDLE-75  , X_MIDDLE+75, Y_MIDDLE+75);
+    LCD_DrawUniLine(X_MIDDLE-75, Y_MIDDLE-75-1, X_MIDDLE+75, Y_MIDDLE+75-1);
+    LCD_DrawUniLine(X_MIDDLE-75, Y_MIDDLE-75+1, X_MIDDLE+75, Y_MIDDLE+75+1);
+
+
+    LCD_DrawFullRect(X_MIDDLE-60,Y_MIDDLE-5,120,10);
+    LCD_DrawFullRect(X_MIDDLE-5,Y_MIDDLE-60,10,120);
+
+
+    DrawThickCircle(X_MIDDLE,Y_MIDDLE,30,7);
+
+    DrawThickCircle(X_MIDDLE+60,Y_MIDDLE,22,   5);
+    DrawThickCircle(X_MIDDLE-60,Y_MIDDLE,22,   5);
+    DrawThickCircle(X_MIDDLE   ,Y_MIDDLE+60,22,5);
+    DrawThickCircle(X_MIDDLE   ,Y_MIDDLE-60,22,5);
+
+    DrawThickCircle(X_MIDDLE+75,Y_MIDDLE+75,32,5);
+    DrawThickCircle(X_MIDDLE-75,Y_MIDDLE-75,32,5);
+    DrawThickCircle(X_MIDDLE+75,Y_MIDDLE-75,32,5);
+    DrawThickCircle(X_MIDDLE-75,Y_MIDDLE+75,32,5);
+
+    LCD_SetColors(LCD_COLOR_BLACK,LCD_COLOR_WHITE-1);
+
+
+    LCD_DisplayStringLine(LINE(1), (uint8_t*)"   Gyroscope    ");
+    
+
+
+  LCD_SetLayer(LCD_BACKGROUND_LAYER);
+
+  uint16_t b=0;
+  uint8_t buff_transmit[100];
+  /**************************************************************************************/
+  /**************************************************************************************/
+  /**************************************************************************************/
     RCC_Configuration();
     GPIO_Configuration();
     USART1_Configuration();
     LED_Initialization();
     ADC_Initialization();
 
-    uint16_t adc_data1=0,adc_data2=0;
+    uint16_t adc_data1=0,adc_data2=0, adc_data3 =0;
     int i=0;
-    float voltage1 =0.0f,voltage2 =0.0f;
+    float voltage1 =0.0f,voltage2 =0.0f,voltage3 =0.0f;
+
+    uint16_t Xpositive=1000,Xnegative=2560;
+    uint16_t Ypositive=3260,Ynegative=3660;
+    uint16_t Zpositive=2040,Znegative=3000;
+
+    float Xaverage=0.5*(Xpositive+Xnegative);
+    float Yaverage=0.5*(Ypositive+Ynegative);
+    float Zaverage=0.5*(Zpositive+Znegative);
+
+    float Xscale=0.5*(Xpositive-Xnegative);
+    float Yscale=0.5*(Ypositive-Ynegative);
+    float Zscale=0.5*(Zpositive-Znegative);
+   
 
     ADC_SoftwareStartConv(ADC3);
+    ADC_SoftwareStartConv(ADC2);
+    ADC_SoftwareStartConv(ADC1);
+
+    
+    float Xg=0.0f,Yg=0.0f, Zg=0.0f,R=0.0f;
+    float X1=0.0f,Y1=0.0f, Z1=0.0f,ATT_angle=0.0f,Roll_angle=0.0f;
+
+
 
     while(1)
     {
@@ -163,7 +303,24 @@ int main(void)
         //ADC_SoftwareStartConv(ADC3);
         Delay_1us(50);
         adc_data1 = ADC_GetConversionValue(ADC3);
+        adc_data2 = ADC_GetConversionValue(ADC2);
+        adc_data3 = ADC_GetConversionValue(ADC1);
 
+        X1=(adc_data1-Xaverage)/Xscale;
+        Y1=(adc_data2-Yaverage)/Yscale;
+        Z1=(adc_data3-Zaverage)/Zscale;
+        
+        R=pow(pow(X1,2)+pow(Y1,2)+pow(Z1,2),0.5);
+
+        Xg=X1/R;
+        Yg=Y1/R;
+        Zg=Z1/R;
+
+        ATT_angle=180*asin(-Xg)/M_PI;
+        Roll_angle=180*asin(Yg )/M_PI;
+        
+         
+        
         // ADC_RegularChannelConfig(ADC3, ADC_Channel_7, 1, ADC_SampleTime_3Cycles);
         // ADC_SoftwareStartConv(ADC3);
         // Delay_1us(10);
@@ -171,16 +328,134 @@ int main(void)
 
         voltage1 = (float)adc_data1*3.3f/4095.0f;
         voltage2 = (float)adc_data2*3.3f/4095.0f;
-
-        sprintf((char *)buff_transmit, "ADC Data = %d, ADC Data2 = %d, Voltage = %fV, Voltage2 = %fV\r\n",adc_data1,adc_data2, voltage1,voltage2);
-          USART1_puts((char *)buff_transmit);
-
-          for (i=0;i<50;i++){
+        voltage3 = (float)adc_data3*3.3f/4095.0f;
+        sprintf((char *)buff_transmit, "ADC Data1 = %d, Voltage1 = %fV\r\n",adc_data1,voltage1);
+        USART1_puts((char *)buff_transmit);
+        for (i=0;i<100;i++){
 
             buff_transmit[i]=0;
           }
+
+
+        sprintf((char *)buff_transmit, "ADC Data2 = %d, Voltage2 = %fV\r\n",adc_data2,voltage2);
+        USART1_puts((char *)buff_transmit);
+        for (i=0;i<100;i++){
+
+            buff_transmit[i]=0;
+          }
+
+
+        sprintf((char *)buff_transmit, "ADC Data3 = %d, Voltage3 = %fV\r\n",adc_data3,voltage3);
+        USART1_puts((char *)buff_transmit);
+
+        for (i=0;i<100;i++){
+
+            buff_transmit[i]=0;
+          }
+
+
+          /////////////////////////////////////////////////////////////////////////////////
+          /////////////////////////////////////////////////////////////////////////////////
+          b++;
+    if(b==999)
+      {
+        b=0;
+      }
+    LCD_SetColors(LCD_COLOR_BLACK,LCD_COLOR_WHITE-1);
+    LCD_SetLayer(LCD_FOREGROUND_LAYER);
+    sprintf( (char *)buff_transmit,"ADC Data1=%d ",adc_data1);
+    LCD_DisplayStringLine(LINE(2), buff_transmit);
+
+    LCD_SetLayer(LCD_FOREGROUND_LAYER);
+    sprintf( (char *)buff_transmit,"Voltage1=%fV ",voltage1);
+    LCD_DisplayStringLine(LINE(5), buff_transmit);
+
+    LCD_SetLayer(LCD_FOREGROUND_LAYER);
+    sprintf( (char *)buff_transmit,"ADC Data2=%d",adc_data2);
+    LCD_DisplayStringLine(LINE(3), buff_transmit);
+
+    LCD_SetLayer(LCD_FOREGROUND_LAYER);
+    sprintf( (char *)buff_transmit,"Voltage2=%fV ",voltage2);
+    LCD_DisplayStringLine(LINE(6), buff_transmit);
+
+    LCD_SetLayer(LCD_FOREGROUND_LAYER);
+    sprintf( (char *)buff_transmit,"ADC Data3=%d",adc_data3);
+    LCD_DisplayStringLine(LINE(4), buff_transmit);
+
+    LCD_SetLayer(LCD_FOREGROUND_LAYER);
+    sprintf( (char *)buff_transmit,"Voltage3=%fV ",voltage3);
+    LCD_DisplayStringLine(LINE(7), buff_transmit);
+
+    LCD_SetLayer(LCD_FOREGROUND_LAYER);
+    sprintf( (char *)buff_transmit,"Xg=%fg ",Xg);
+    LCD_DisplayStringLine(LINE(8), buff_transmit);
+
+    LCD_SetLayer(LCD_FOREGROUND_LAYER);
+    sprintf( (char *)buff_transmit,"Yg=%fg ",Yg);
+    LCD_DisplayStringLine(LINE(9), buff_transmit);
+
+    LCD_SetLayer(LCD_FOREGROUND_LAYER);
+    sprintf( (char *)buff_transmit,"Zg=%fg ",Zg);
+    LCD_DisplayStringLine(LINE(10), buff_transmit);
+
+    LCD_SetLayer(LCD_FOREGROUND_LAYER);
+    sprintf( (char *)buff_transmit,"ATT_angle=%f ",ATT_angle);
+    LCD_DisplayStringLine(LINE(11), buff_transmit);
+
+
+    LCD_SetLayer(LCD_FOREGROUND_LAYER);
+    sprintf( (char *)buff_transmit,"Roll_angle=%f ",Roll_angle);
+    LCD_DisplayStringLine(LINE(12), buff_transmit);
+
+
+
+    if(colorR_dir){
+
+          colorR += 1;
+
+      if(colorR > 250) colorR_dir=0;
+      
+    }else{
+
+      colorR -= 1;
+
+      if(colorR<20) colorR_dir=1;
+    }
+
+    if(colorG_dir){
+
+          colorG += 2;
+
+      if(colorG > 250) colorG_dir=0;
+      
+    }else{
+
+      colorG -= 2;
+
+      if(colorG<25) colorG_dir=1;
+    }
+
+    if(colorB_dir){
+
+          colorB += 3;
+
+      if(colorB > 250) colorB_dir=0;
+      
+    }else{
+
+      colorB -= 3;
+
+      if(colorB<25) colorB_dir=1;
+    }
+
+    LCD_SetLayer(LCD_BACKGROUND_LAYER);
+    LCD_SetColors(ASSEMBLE_RGB(colorR, colorG, colorB),LCD_COLOR_BLACK);
+    LCD_DrawFullRect(0,0,240,320);
+    ///////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////
+
           
-        Delay_1us(1000);
+        Delay_1us(50000);
     }
 
 
