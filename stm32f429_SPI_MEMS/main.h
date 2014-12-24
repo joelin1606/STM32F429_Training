@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include "lcd.h"
 
-
 static inline void Delay_1us(uint32_t nCnt_1us);
 
 #endif /* __MAIN_H */
