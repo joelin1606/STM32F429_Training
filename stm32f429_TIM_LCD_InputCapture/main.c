@@ -5,32 +5,56 @@
 
 void TIM5_IRQHandler(void);
 
-uint32_t timebaseCapture_prev = 0;
-uint32_t timebaseCapture_current =0;
-uint32_t timebaseCapture_output = 0;
+uint32_t LOW=0;
+uint32_t HIGH=0;
+uint32_t period=0;
+uint32_t timebaseCapture_prev= 0;
+uint32_t timebaseCapture_current=0;
+uint32_t timebaseCapture_output= 0;
+
+
+
+int8_t HIGH_LOW=0;
 
 void TIM2_IRQHandler()
 {
 
 
-  if (TIM_GetITStatus(TIM2, TIM_IT_CC1) == SET) {
+  if (TIM_GetITStatus(TIM2, TIM_IT_CC1) == SET) 
+  {
     /* Clear TIM2 Capture compare interrupt pending bit */
     TIM_ClearITPendingBit(TIM2, TIM_IT_CC1);
+    HIGH_LOW= GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_5);
 
-      /* Get the Input Capture value */
-      timebaseCapture_prev = timebaseCapture_current;
-      timebaseCapture_current = TIM_GetCapture1(TIM2);
+    timebaseCapture_prev = timebaseCapture_current;
+    timebaseCapture_current = TIM_GetCapture1(TIM2);
 
-      if(timebaseCapture_current > timebaseCapture_prev){
+    // if(timebaseCapture_current <= timebaseCapture_prev)
+    // {
+    //   timebaseCapture_current=0xFFFF+timebaseCapture_current;
+    // }
+    
+    // timebaseCapture_output= (timebaseCapture_current- timebaseCapture_prev)*5/9;
 
-        timebaseCapture_output  = (timebaseCapture_current- timebaseCapture_prev)*5/18;
+    if(timebaseCapture_current > timebaseCapture_prev)
+    {
+      timebaseCapture_output = (timebaseCapture_current- timebaseCapture_prev)*5/9;
+    }
+    else
+    {
+      timebaseCapture_output = (0xFFFF - timebaseCapture_prev + timebaseCapture_current)*5/9;        
+    }
 
+   if(HIGH_LOW==1)
+   {
+      LOW=timebaseCapture_output;
+   }
+   if(HIGH_LOW==0)
+   {
+      HIGH=timebaseCapture_output;
+   }
+   period=LOW+HIGH;
 
-      }else{
-
-        timebaseCapture_output  =  (0xFFFF - timebaseCapture_prev + timebaseCapture_current)*5/18;
-      }
-      
   }
 }
 
@@ -73,7 +97,7 @@ void TIM2_Initialization(void)
   TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStruct);
 
   TIM_ICInitStructure.TIM_Channel = TIM_Channel_1;
-  TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;       //POLARITY!!!!
+  TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_BothEdge;       //POLARITY!!!!
   TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;   
   TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;             //Prescaler
   TIM_ICInitStructure.TIM_ICFilter = 0x0;
@@ -120,7 +144,11 @@ int main(void)
   while (1){
 
 
-     sprintf(lcd_text_main,"\nPeriod = %ldus",timebaseCapture_output);
+     // sprintf(lcd_text_main,"\nPeriod = %ldus",period);
+     // terminalWrite(lcd_text_main); 
+     sprintf(lcd_text_main,"\nperiod=%d",period);
+     terminalWrite(lcd_text_main); 
+     sprintf(lcd_text_main," H=%d",HIGH);
      terminalWrite(lcd_text_main); 
      Delay_1us(10000);
   }
