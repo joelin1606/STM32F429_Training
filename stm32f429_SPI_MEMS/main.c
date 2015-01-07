@@ -62,8 +62,7 @@ int main(void)
 {
 
   char lcd_text_main[100];
-  uint32_t runner=0;
-
+ 
     
 
     lcd_init();
@@ -85,9 +84,12 @@ int main(void)
     int8_t receivedDataHY=0;
     int8_t receivedDataLZ=0;
     int8_t receivedDataHZ=0;
-    int X=0;
-    int Y=0;
-    int Z=0;
+    int16_t X=0;
+    int16_t Y=0;
+    int16_t Z=0;
+    float x_acc=0;
+    float y_acc=0;
+    float z_acc=0;
 
 
 
@@ -125,7 +127,7 @@ GPIO_ResetBits(GPIOC, GPIO_Pin_1);
       while (SPI_I2S_GetFlagStatus(SPI5, SPI_FLAG_RXNE) == RESET);
       receivedDataLX=SPI_I2S_ReceiveData(SPI5);
       GPIO_SetBits(GPIOC, GPIO_Pin_1);
-      sprintf(lcd_text_main,"\n\n\n\nreceivedDataLX: %d    \n\n", receivedDataLX); terminalWrite(lcd_text_main); 
+      // sprintf(lcd_text_main,"\n\n\n\nreceivedDataLX: %d    \n\n", receivedDataLX); terminalWrite(lcd_text_main); 
 GPIO_SetBits(GPIOC, GPIO_Pin_1);
 
 
@@ -142,7 +144,7 @@ GPIO_ResetBits(GPIOC, GPIO_Pin_1);
       while (SPI_I2S_GetFlagStatus(SPI5, SPI_FLAG_RXNE) == RESET);
       receivedDataHX=SPI_I2S_ReceiveData(SPI5);
       GPIO_SetBits(GPIOC, GPIO_Pin_1);
-      sprintf(lcd_text_main,"receivedDataHX: %d    \n\n", receivedDataHX); terminalWrite(lcd_text_main); 
+      // sprintf(lcd_text_main,"receivedDataHX: %d    \n\n", receivedDataHX); terminalWrite(lcd_text_main); 
 GPIO_SetBits(GPIOC, GPIO_Pin_1);
 
 //////////////////////////YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
@@ -159,7 +161,7 @@ GPIO_ResetBits(GPIOC, GPIO_Pin_1);
       while (SPI_I2S_GetFlagStatus(SPI5, SPI_FLAG_RXNE) == RESET);
       receivedDataLY=SPI_I2S_ReceiveData(SPI5);
       GPIO_SetBits(GPIOC, GPIO_Pin_1);
-      sprintf(lcd_text_main,"receivedDataLY: %d    \n\n", receivedDataLY); terminalWrite(lcd_text_main); 
+      // sprintf(lcd_text_main,"receivedDataLY: %d    \n\n", receivedDataLY); terminalWrite(lcd_text_main); 
 GPIO_SetBits(GPIOC, GPIO_Pin_1);
 
 
@@ -175,7 +177,7 @@ GPIO_ResetBits(GPIOC, GPIO_Pin_1);
       while (SPI_I2S_GetFlagStatus(SPI5, SPI_FLAG_RXNE) == RESET);
       receivedDataHY=SPI_I2S_ReceiveData(SPI5);
       GPIO_SetBits(GPIOC, GPIO_Pin_1);
-      sprintf(lcd_text_main,"receivedDataHY: %d    \n\n", receivedDataHY); terminalWrite(lcd_text_main); 
+      // sprintf(lcd_text_main,"receivedDataHY: %d    \n\n", receivedDataHY); terminalWrite(lcd_text_main); 
 GPIO_SetBits(GPIOC, GPIO_Pin_1);
 
 //////////////////////////ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZz
@@ -193,7 +195,7 @@ GPIO_ResetBits(GPIOC, GPIO_Pin_1);
       while (SPI_I2S_GetFlagStatus(SPI5, SPI_FLAG_RXNE) == RESET);
       receivedDataLZ=SPI_I2S_ReceiveData(SPI5);
       GPIO_SetBits(GPIOC, GPIO_Pin_1);
-      sprintf(lcd_text_main,"receivedDataLZ: %d    \n\n", receivedDataLZ); terminalWrite(lcd_text_main); 
+      // sprintf(lcd_text_main,"receivedDataLZ: %d    \n\n", receivedDataLZ); terminalWrite(lcd_text_main); 
 GPIO_SetBits(GPIOC, GPIO_Pin_1);
 
 
@@ -209,18 +211,21 @@ GPIO_ResetBits(GPIOC, GPIO_Pin_1);
       while (SPI_I2S_GetFlagStatus(SPI5, SPI_FLAG_RXNE) == RESET);
       receivedDataHZ=SPI_I2S_ReceiveData(SPI5);
       GPIO_SetBits(GPIOC, GPIO_Pin_1);
-      sprintf(lcd_text_main,"receivedDataHZ: %d    \n\n\n\n\n", receivedDataHZ); terminalWrite(lcd_text_main); 
+      // sprintf(lcd_text_main,"receivedDataHZ: %d    \n\n\n\n\n", receivedDataHZ); terminalWrite(lcd_text_main); 
 GPIO_SetBits(GPIOC, GPIO_Pin_1);
 
 
-      X=receivedDataLX+receivedDataHX*128;
-      Y=receivedDataLY+receivedDataHY*128;
-      Z=receivedDataLZ+receivedDataHZ*128;
+      X=receivedDataLX | receivedDataHX<<8;
+      Y=receivedDataLY | receivedDataHY<<8;
+      Z=receivedDataLZ | receivedDataHZ<<8;
 
-      sprintf(lcd_text_main,"X= %d\nY= %d\nZ= %d\n\n\n",X,Y,Z); terminalWrite(lcd_text_main);
+      x_acc=250*(float) X/32768;
+      y_acc=250*(float) Y/32768;
+      z_acc=250*(float) Z/32768;
+
+      sprintf(lcd_text_main,"X=%.3f Y=%.3f Z=%.3f\n",x_acc,y_acc,z_acc); terminalWrite(lcd_text_main);
       
-      Delay_1us(800000);
+      Delay_1us(80000);
     }
-  
+  // ,x_acc,y_acc,z_acc
 }
-

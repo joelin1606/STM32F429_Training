@@ -39,34 +39,20 @@ void GPIO_Configuration(void)
  
 /**************************************************************************************/
  
-void LED_Initialization(void){
 
-  GPIO_InitTypeDef  GPIO_InitStructure;
-
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOG , ENABLE); //LED3/4 GPIO Port
-
-  /* Configure the GPIO_LED pin */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13 | GPIO_Pin_14;  // LED is connected to PG13/PG14
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_Init(GPIOG, &GPIO_InitStructure);
-
-}
 
 
 void PWM_Initialization(void)
 {
 
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM9, ENABLE);
   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOE , ENABLE); 
 
   /* -- GPIO Configuration ---------------------------------------------------- */
-  GPIO_PinAFConfig(GPIOE, GPIO_PinSource11, GPIO_AF_TIM1);
+  GPIO_PinAFConfig(GPIOE, GPIO_PinSource5, GPIO_AF_TIM9);
 
   GPIO_InitTypeDef GPIO_InitStruct;
-  GPIO_InitStruct.GPIO_Pin =  GPIO_Pin_11 ;
+  GPIO_InitStruct.GPIO_Pin =  GPIO_Pin_5 ;
   GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
   GPIO_InitStruct.GPIO_Speed = GPIO_Speed_100MHz;
   GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
@@ -75,7 +61,7 @@ void PWM_Initialization(void)
   GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /* -- Timer Configuration --------------------------------------------------- */
-  TIM_DeInit(TIM1);
+  TIM_DeInit(TIM9);
 
   TIM_TimeBaseInitTypeDef TIM_TimeBaseStruct;
   TIM_TimeBaseStruct.TIM_Period = (uint32_t)(20000 - 1);  //2.5ms , 400Hz
@@ -84,7 +70,7 @@ void PWM_Initialization(void)
   TIM_TimeBaseStruct.TIM_RepetitionCounter = 0;           // Not used
   TIM_TimeBaseStruct.TIM_CounterMode = TIM_CounterMode_Up;
 
-  TIM_TimeBaseInit(TIM1, &TIM_TimeBaseStruct);
+  TIM_TimeBaseInit(TIM9, &TIM_TimeBaseStruct);
 
 
   TIM_OCInitTypeDef TIM_OCInitStruct;
@@ -96,15 +82,61 @@ void PWM_Initialization(void)
   TIM_OCInitStruct.TIM_OCIdleState = TIM_OCIdleState_Reset;     // No output polarity : reset (low)
   TIM_OCInitStruct.TIM_OCNIdleState = TIM_OCIdleState_Reset;    // Complementary idle output : reset (not used)
 
-  TIM_OC2Init(TIM1, &TIM_OCInitStruct);
-  TIM_OC2PreloadConfig(TIM1, TIM_OCPreload_Enable);
+  TIM_OC1Init(TIM9, &TIM_OCInitStruct);
+  TIM_OC1PreloadConfig(TIM9, TIM_OCPreload_Enable);
 
-  TIM_ARRPreloadConfig(TIM1, ENABLE);       //Put ARR value into register
-  TIM_Cmd(TIM1, ENABLE);                    // Enable Timer 1
-  TIM_CtrlPWMOutputs(TIM1, ENABLE);         // Enable output (To GPIO)
+  TIM_ARRPreloadConfig(TIM9, ENABLE);       //Put ARR value into register
+  TIM_Cmd(TIM9, ENABLE);                    // Enable Timer 1
+  TIM_CtrlPWMOutputs(TIM9, ENABLE);         // Enable output (To GPIO)
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM10, ENABLE);
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOF , ENABLE); 
+
+  /* -- GPIO Configuration ---------------------------------------------------- */
+  GPIO_PinAFConfig(GPIOF, GPIO_PinSource6, GPIO_AF_TIM10);
+
+  GPIO_InitStruct.GPIO_Pin =  GPIO_Pin_6 ;
+  GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
+  GPIO_InitStruct.GPIO_Speed = GPIO_Speed_100MHz;
+  GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
+  GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
+
+  GPIO_Init(GPIOF, &GPIO_InitStruct);
+
+  /* -- Timer Configuration --------------------------------------------------- */
+  TIM_DeInit(TIM10);
+
+  
+  TIM_TimeBaseStruct.TIM_Period = (uint32_t)(20000 - 1);  //2.5ms , 400Hz
+  TIM_TimeBaseStruct.TIM_Prescaler = (uint16_t)(180 - 1); //84 = 1M(1us)
+  TIM_TimeBaseStruct.TIM_ClockDivision = TIM_CKD_DIV1;    // No division, so 180MHz
+  TIM_TimeBaseStruct.TIM_RepetitionCounter = 0;           // Not used
+  TIM_TimeBaseStruct.TIM_CounterMode = TIM_CounterMode_Up;
+
+  TIM_TimeBaseInit(TIM10, &TIM_TimeBaseStruct);
+
+
+  
+  TIM_OCInitStruct.TIM_OCMode = TIM_OCMode_PWM1;               //PWM Edge mode
+  TIM_OCInitStruct.TIM_OutputState = TIM_OutputState_Enable;
+  TIM_OCInitStruct.TIM_Pulse = 1000-1;
+  TIM_OCInitStruct.TIM_OCPolarity = TIM_OCPolarity_High;        // Output polarity High
+  TIM_OCInitStruct.TIM_OCNPolarity = TIM_OCNPolarity_High;      // Complementary output polarity :Not used
+  TIM_OCInitStruct.TIM_OCIdleState = TIM_OCIdleState_Reset;     // No output polarity : reset (low)
+  TIM_OCInitStruct.TIM_OCNIdleState = TIM_OCIdleState_Reset;    // Complementary idle output : reset (not used)
+
+  TIM_OC1Init(TIM10, &TIM_OCInitStruct);
+  TIM_OC1PreloadConfig(TIM10, TIM_OCPreload_Enable);
+
+  TIM_ARRPreloadConfig(TIM10, ENABLE);       //Put ARR value into register
+  TIM_Cmd(TIM10, ENABLE);                    // Enable Timer 1
+  TIM_CtrlPWMOutputs(TIM10, ENABLE);         // Enable output (To GPIO)
+
+
 }
-
-
 
 
 void USART1_Configuration(void)
@@ -154,66 +186,53 @@ void USART1_puts(char* s)
     }
 }
 
-void LED3_On(void){
 
-  GPIO_SetBits(GPIOG,GPIO_Pin_13);
-
-}
-
-void LED3_Toggle(void){
-
-
-  GPIOG->ODR ^= GPIO_Pin_13;
-
-}
 /**************************************************************************************/
 uint8_t t=0;// USART input and output
 uint8_t q[5];//input array
 uint8_t checksum=0x00;
-uint8_t PWMoutput=0;
+uint32_t PWMoutput=1000;
 uint8_t c10=0,c10output;;
+uint8_t k=0;
 
 /**************************************************************************************/
 int main(void)
 {
     RCC_Configuration();
     GPIO_Configuration();
-    LED_Initialization();
     PWM_Initialization();
     USART1_Configuration();
 
-    TIM1->CCR2 = 0;
-    G
-    while(1)
+
+Delay_1us(10000000);
+while(1)
+{
+    TIM9->CCR1 =PWMoutput ;
+    TIM10->CCR1 =PWMoutput;
+
+    if(PWMoutput==1500)
     {
-      checksum=q[0]+q[1]+q[2]+q[3];
-
-        if(q[0]==0x91)
-        {
-          if(q[1]==0x71)
-          {
-            if(q[2]==0x01)
-            {
-              if(q[4]==checksum)
-              {
-                PWMoutput=q[3];
-                if(q[3]<0x03)
-                {
-                  PWMoutput=0x03;
-                }
-                if(q[3]>0xfc)
-                {
-                  PWMoutput=0xfc;
-                }
-
-                TIM1->CCR2 =988+PWMoutput*4;
-              }
-            }
-          }
-        }
+      k=1;
     }
-}
+    if(PWMoutput==1000)
+    {
+      k=0;
+    }
+    if(k==0)
+    {
+      PWMoutput++;
+    }
+    if(k==1)
+    {
+      PWMoutput--;
+    }
 
+ Delay_1us(30000);
+    
+}
+    
+    
+}
 void USART1_IRQHandler(void)//USART interrupt function
 {
   
