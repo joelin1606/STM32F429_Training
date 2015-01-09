@@ -9,6 +9,7 @@
 
 void RCC_Configuration(void);
 void LED_Initialization(void);
+void GPIO_Configuration(void);
 void LED3_Toggle(void);
 void LED3_On(void);
 void LED3_Off(void);

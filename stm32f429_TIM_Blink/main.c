@@ -14,11 +14,37 @@ void RCC_Configuration(void)
       /* --------------------------- System Clocks Configuration -----------------*/
       /* GPIOA clock enable */
       RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
+      RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD , ENABLE);
+
 }
  
 /**************************************************************************************/
  
-void LED_Initialization(void){
+void GPIO_Configuration(void)
+{
+    GPIO_InitTypeDef GPIO_InitStructure;
+
+    /*-------------------------- GPIO Configuration for Push Button ----------------------------*/
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_OD ;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+/////////////////////////////////////////////////////////////////////////////////
+    
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_10 | GPIO_Pin_12;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP ;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOD, &GPIO_InitStructure);
+
+}
+
+void LED_Initialization(void)
+{
 
   GPIO_InitTypeDef  GPIO_InitStructure;
 
@@ -38,28 +64,20 @@ void LED_Initialization(void){
 void Timer5_Initialization(void)
 {
 
+ /* -- Timer Configuration --------------------------------------------------- */
   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
-  NVIC_InitTypeDef NVIC_InitStructure;
-
-  /* Enable the TIM5 global Interrupt */
-  NVIC_InitStructure.NVIC_IRQChannel =  TIM5_IRQn ;
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-
-  NVIC_Init(&NVIC_InitStructure);
-
-  /* -- Timer Configuration --------------------------------------------------- */
+  
   TIM_DeInit(TIM5);
   TIM_TimeBaseInitTypeDef TIM_TimeBaseStruct;
-  TIM_TimeBaseStruct.TIM_Period = 80 - 1 ;  //250ms  --> 4Hz
+  TIM_TimeBaseStruct.TIM_Period = 10000 - 1 ;  //250ms  --> 4Hz
   TIM_TimeBaseStruct.TIM_Prescaler = 900 - 1; // Prescaled by 900 -> = 0.1M(10us)
   TIM_TimeBaseStruct.TIM_ClockDivision = TIM_CKD_DIV1; // Div by one -> 90 MHz (Now RCC_DCKCFGR_TIMPRE is configured to divide clock by two)
   TIM_TimeBaseStruct.TIM_CounterMode = TIM_CounterMode_Up;
+  TIM_TimeBaseStruct.TIM_RepetitionCounter = 0;
 
   TIM_TimeBaseInit(TIM5, &TIM_TimeBaseStruct);
-  TIM_ITConfig(TIM5, TIM_IT_Update, ENABLE);    // Set interrupt when timer reloads (overflow)
-  TIM_ARRPreloadConfig(TIM5, DISABLE);       //Put ARR value into register
+  // TIM_ITConfig(TIM5, TIM_IT_Update, ENABLE);    // Set interrupt when timer reloads (overflow)
+  // TIM_ARRPreloadConfig(TIM5, DISABLE);       //Put ARR value into register
   TIM_Cmd(TIM5, ENABLE);
 }
 
@@ -84,33 +102,35 @@ int main(void)
     RCC_Configuration();
     LED_Initialization();
     Timer5_Initialization();
-    while(1)
+    GPIO_Configuration();
+    int timevalue=0;
+    uint8_t i=0;
+
+    while (1)
     {
-      LED4_Toggle();
-      Delay_1us(800);
+      timevalue=TIM_GetCounter(TIM5);
+      if(timevalue == 1000)
+      {
+        LED4_Toggle();
+        
+        // if(i==0)
+        //   {
+        //     GPIO_SetBits(GPIOD, GPIO_Pin_8);
+        //     i=5;
+        //   }
+        // else
+        //   {
+        //     GPIO_ResetBits(GPIOD, GPIO_Pin_8);
+        //     i=0;
+        //   }
+
+      }
+      
+      
         // this loop is doing nothing but smiling at you :)
+      
     }
 }
 
-
-
-uint16_t autoReloader=25000;
-void TIM5_IRQHandler()
-{
-        if (TIM_GetITStatus(TIM5, TIM_IT_Update) != RESET){
-           LED3_Toggle();
-
-
-            //TIM_SetAutoreload(TIM5, autoReloader);
-            //autoReloader= autoReloader - 500;
-
-            // if(autoReloader<1000){
-
-            //   autoReloader = 25000;
-            // }
-
-        TIM_ClearITPendingBit(TIM5, TIM_IT_Update);
-        }
-}
 
 

@@ -94,7 +94,7 @@ int main(void)
 
 
 GPIO_ResetBits(GPIOC, GPIO_Pin_1);
-
+      /* SPI config */
       SPI_I2S_SendData(SPI5,0x20);
       while (SPI_I2S_GetFlagStatus(SPI5, SPI_I2S_FLAG_TXE) == RESET);
       while (SPI_I2S_GetFlagStatus(SPI5, SPI_FLAG_RXNE) == RESET);
