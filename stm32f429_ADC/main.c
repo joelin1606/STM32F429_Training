@@ -448,9 +448,11 @@ int main(void)
 
   uint16_t b=0;
   uint8_t buff_transmit[100];
+
   /**************************************************************************************/
   /**************************************************************************************/
   /**************************************************************************************/
+
     RCC_Configuration();
     GPIO_Configuration();
     USART1_Configuration();
@@ -460,39 +462,36 @@ int main(void)
     SPI_Initialization();
     Timer5_Initialization();
 
-    int16_t adc_data1=0,adc_data2=0, adc_data3 =0;
+    int16_t adc_data3=0,adc_data2=0, adc_data1 =0;
     uint ADC1sum=0,ADC2sum=0,ADC3sum=0;
-    uint16_t ADC1set=0,ADC2set=0,ADC3set=0;
     int i=0;
-    float voltage1 =0.0f,voltage2 =0.0f,voltage3 =0.0f;
     double dt=1.0f;
     int32_t timevalue=0;
     int32_t foretimevalue=0;
 
+    float adc_errorX = 0.0f ;
+    float adc_errorY = 0.0f ;
+    float adc_errorZ = 0.0f ;
 
-    // uint16_t Xpositive=1000,Xnegative=2560;
-    // uint16_t Ypositive=3260,Ynegative=3660;
-    // uint16_t Zpositive=2040,Znegative=3000;
 
-    // double Xaverage=0.5*(Xpositive+Xnegative);
-    // double Yaverage=0.5*(Ypositive+Ynegative);
-    // double Zaverage=0.5*(Zpositive+Znegative);
+/////////////////////////////////////////////////////////////////////////////////////
+    
+    float Xmidpoint = 1795.0f;  ////////adc1
+    float Ymidpoint = 375.0f;
+    float Zmidpoint = 375.0f;
 
-    uint16_t Xscale=375;
-    uint16_t Yscale=375;
-    uint16_t Zscale=375;
-    // double Yscale=0.5*(Ypositive-Ynegative);
-    // double Zscale=0.5*(Zpositive-Znegative);
-   
-
+    uint16_t Xscale = 375;
+    uint16_t Yscale = 375;
+    uint16_t Zscale = 375;
+  
     ADC_SoftwareStartConv(ADC3);
     ADC_SoftwareStartConv(ADC2);
     ADC_SoftwareStartConv(ADC1);
-
-    
+  
+      
     float Xg=0.0f,Yg=0.0f, Zg=0.0f,R=0.0f;
-    float X1=0.0f,Y1=0.0f, Z1=0.0f,angle=0.0f,angle0=0.0f;
-    float kp=0.4f,ki=0.7f,kd=0.1f;
+    float X1=0.0f,Y1=0.0f, Z1=0.0f,angle=0.0f,angle0=0.0f ,setangle=0.0f;
+    float kp=0.45f,ki=0.7f,kd=0.12f;
     float smallangle=0.0f;
     float output=0.0f;
     float integral=0.0f;
@@ -500,9 +499,10 @@ int main(void)
     float preerror=0.0f;
     float derivative=0.0f;
     float fixmotor=28.15f;
-/////////////////////////////////////////////////////////////////////////////////////
-     
 
+/////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////     
+/////////////////////////////////////////////////////////////////////////////////////
     uint8_t receivedData1=0;
     uint8_t receivedData2=0;
     uint8_t receivedDataLX=0;
@@ -518,8 +518,8 @@ int main(void)
     int Ysum=0;
     int Zsum=0;
     float gyrox=0;
-    float y_acc=0;
-    float z_acc=0;
+    float gyroy=0;
+    float gyroz=0;
 /////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -557,10 +557,10 @@ uint8_t N=30;
    while(j<N)
 {
 
-        adc_data1 = ADC_GetConversionValue(ADC3);
+        adc_data1 = ADC_GetConversionValue(ADC1);
         adc_data2 = ADC_GetConversionValue(ADC2);
-        adc_data3 = ADC_GetConversionValue(ADC1);
-
+        adc_data3 = ADC_GetConversionValue(ADC3);
+        
 
 GPIO_ResetBits(GPIOC, GPIO_Pin_1);
 
@@ -661,28 +661,45 @@ GPIO_SetBits(GPIOC, GPIO_Pin_1);
       Ysum+=Y;
       Zsum+=Z;
 
-      ADC1sum+= ADC_GetConversionValue(ADC3);
-      ADC2sum+= ADC_GetConversionValue(ADC2);
-      ADC3sum+= ADC_GetConversionValue(ADC1);
+      ADC1sum+= adc_data1;
+      ADC2sum+= adc_data2;
+      ADC3sum+= adc_data3;
 
 
   j++;
   TIM9->CCR1 =PWMoutput ;
   TIM10->CCR1 =PWMoutput;
-   Delay_1us(100000);
+   Delay_1us(80000);
 }
 
-int16_t Xset;
-int16_t Yset;
-int16_t Zset;
+float Xset;
+float Yset;
+float Zset;
 
-Xset=Xsum/N;
-Yset=Ysum/N;
-Zset=Zsum/N;
+float ADCXset;
+float ADCYset;
+float ADCZset;
 
-ADC1set= ADC1sum/N;
-ADC2set= ADC2sum/N;
-ADC3set= ADC3sum/N;
+Xset = (float) Xsum / (float) N;
+Yset = (float) Ysum / (float) N;
+Zset = (float) Zsum / (float) N;
+
+ADCXset = (float)ADC1sum / (float)N;
+ADCYset = (float)ADC2sum / (float)N;
+ADCZset = (float)ADC3sum / (float)N;
+
+// setangle = 180.0f* asin( different /(float) Xscale )/M_PI ;
+
+
+float kk=(ADCXset-Xmidpoint)/Xscale;
+if(kk>1)
+{kk=1;}
+if(kk<-1)
+{kk=-1;}
+
+setangle = 180.0f*asin(kk)/M_PI; 
+
+
 
 
 GPIO_ToggleBits(GPIOG,GPIO_Pin_14);
@@ -802,23 +819,24 @@ GPIO_SetBits(GPIOC, GPIO_Pin_1);
       X=receivedDataLX | receivedDataHX<<8;
       Y=receivedDataLY | receivedDataHY<<8;
       Z=receivedDataLZ | receivedDataHZ<<8;
+
       X-=Xset;
       Y-=Yset;
       Z-=Zset;
 
       gyrox=250.0f*(float) X/32768.0f;
-      y_acc=250.0f*(float) Y/32768.0f;
-      z_acc=250.0f*(float) Z/32768.0f;
+      gyroy=250.0f*(float) Y/32768.0f;
+      gyroz=250.0f*(float) Z/32768.0f;
 
 
 
         // sprintf((char *)buff_transmit, "x_av = %.3f\r\n",gyrox);
         // USART1_puts((char *)buff_transmit);
 
-        // sprintf((char *)buff_transmit, "y_av = %.3f\r\n",y_acc);
+        // sprintf((char *)buff_transmit, "y_av = %.3f\r\n",gyroy);
         // USART1_puts((char *)buff_transmit);
 
-        // sprintf((char *)buff_transmit, "z_av = %.3f\r\n",z_acc);
+        // sprintf((char *)buff_transmit, "z_av = %.3f\r\n",gyroz);
         // USART1_puts((char *)buff_transmit);
 
         for (i=0;i<100;i++){
@@ -830,27 +848,33 @@ GPIO_SetBits(GPIOC, GPIO_Pin_1);
         // LED3_Toggle();
         //ADC_RegularChannelConfig(ADC3, ADC_Channel_6, 1, ADC_SampleTime_3Cycles);
         //ADC_SoftwareStartConv(ADC3);
-        
-        adc_data1 = ADC_GetConversionValue(ADC3);
+
+        adc_data1 = ADC_GetConversionValue(ADC1);
         adc_data2 = ADC_GetConversionValue(ADC2);
-        adc_data3 = ADC_GetConversionValue(ADC1);
+        adc_data3 = ADC_GetConversionValue(ADC3);
+        
+        
+        adc_errorX = (float) adc_data1-ADCXset;
+        adc_errorY = (float) adc_data2-ADCYset;
+        adc_errorZ = (float) adc_data3-ADCZset;
 
-        adc_data1 = adc_data1-ADC1set;
-        adc_data2 = adc_data2-ADC2set;
-        adc_data3 = adc_data3-ADC3set;
 
-
-        Z1=(float)adc_data1/Zscale;
-        Y1=(float)adc_data2/Yscale;
-        X1=(float)adc_data3/Xscale;
-
+        X1 = ((float)adc_data1 - ADCXset)/  (float)Xscale;
+        Y1 = ((float)adc_data2 - ADCYset)/ (float)Yscale;
+        Z1 = ((float)adc_data3 - ADCZset)/ (float)Zscale;
+        
         if(X1>1)
           {X1=1;}
         if(X1<-1)
           {X1=-1;}
 
+        // X1=(float) adc_errorX/Xscale;
+        // Y1=(float) adc_errorY/Yscale;
+        // Z1=(float) adc_errorZ/Zscale;
+        
+
         /////////    dt        ////////////////////////////////////
-        foretimevalue=timevalue;
+        foretimevalue = timevalue;
         timevalue=TIM_GetCounter(TIM5);
         LED4_Toggle();
         
@@ -869,25 +893,39 @@ GPIO_SetBits(GPIOC, GPIO_Pin_1);
         
         /////////    dt        ////////////////////////////////////
 
-        PWMoutput=1400;
-        smallangle=180.0f*X1/M_PI;
+        PWMoutput= 1400 ;
+        angle0=    180.0f* asin(X1)/M_PI;
+        smallangle=180.0f*     (X1)/M_PI;
+        
 
 //////////////////////////////////////
 
         angle0=180.0f*asin(X1)/M_PI;
+
         if (angle0<5)
         {angle0=smallangle;}
 
 /////////////////////////////////////////
 
-        angle =0.9f*(angle+gyrox*dt)+0.1f*angle0;
+        angle =0.92f*(angle+gyrox*dt)+0.08f*angle0;
         error=angle*8;
 
 ///////////////////////////////////////
        
         integral=integral+error*dt;
+        if(integral>30)
+          {integral=30;}
+        if(integral<-30)
+          {integral=-30;}
 
         derivative=(error-preerror)/dt;
+        if(derivative>1300)
+          {derivative=800;}
+        if(derivative<-1300)
+          {derivative=-800;}
+        if(derivative<10 && derivative>-10)
+          {derivative=0;}
+
         output=kp*error+ki*integral+kd*derivative;
         preerror=error;
 
@@ -895,8 +933,10 @@ GPIO_SetBits(GPIOC, GPIO_Pin_1);
 
 ////////////////////////////////////////////////////
 
-      TIM9->CCR1 =  PWMoutput +  fixmotor  -  output*1.5  ;
+      TIM9->CCR1 =  PWMoutput +  fixmotor  -  output*0.9  ;
+      // TIM9->CCR1 =  1200  ;
       TIM10->CCR1 =  PWMoutput -  fixmotor  +  output*0.5 ;
+
 
         
 
@@ -922,11 +962,11 @@ GPIO_SetBits(GPIOC, GPIO_Pin_1);
         // Delay_1us(10);
         // adc_data2 = ADC_GetConversionValue(ADC3);
 
-        // voltage1 = (float)adc_data1*3.3f/4095.0f;
+        // voltage1 = (float)adc_data3*3.3f/4095.0f;
         // voltage2 = (float)adc_data2*3.3f/4095.0f;
-        // voltage3 = (float)adc_data3*3.3f/4095.0f;
+        // voltage3 = (float)adc_data1*3.3f/4095.0f;
 
-        sprintf((char *)buff_transmit, "ADC Data1 = %d\r\n",adc_data1);
+        sprintf((char *)buff_transmit, "ADC Data1 = %d\r\n",adc_data3);
         USART1_puts((char *)buff_transmit);
         for (i=0;i<100;i++){
 
@@ -942,7 +982,7 @@ GPIO_SetBits(GPIOC, GPIO_Pin_1);
           }
 
 
-        sprintf((char *)buff_transmit, "ADC Data3 = %d\r\n",adc_data3);
+        sprintf((char *)buff_transmit, "ADC Data3 = %d\r\n",adc_data1);
         USART1_puts((char *)buff_transmit);
 
         for (i=0;i<100;i++){
@@ -960,59 +1000,59 @@ GPIO_SetBits(GPIOC, GPIO_Pin_1);
       }
     LCD_SetColors(LCD_COLOR_BLACK,LCD_COLOR_WHITE-1);
     LCD_SetLayer(LCD_FOREGROUND_LAYER);
-    sprintf( (char *)buff_transmit,"err=%f             ",error);
+    sprintf( (char *)buff_transmit,"angle=%f             ",setangle);
     LCD_DisplayStringLine(LINE(2), buff_transmit);
 
 
     LCD_SetLayer(LCD_FOREGROUND_LAYER);
     sprintf( (char *)buff_transmit,"i=%f           ",integral);
-    LCD_DisplayStringLine(LINE(3), buff_transmit);
-
-
-    LCD_SetLayer(LCD_FOREGROUND_LAYER);
-    sprintf( (char *)buff_transmit,"d=%f           ",derivative);
-    LCD_DisplayStringLine(LINE(4), buff_transmit);
-
-
-    LCD_SetLayer(LCD_FOREGROUND_LAYER);
-    sprintf( (char *)buff_transmit,"gyrox=%f             ",gyrox);
     LCD_DisplayStringLine(LINE(5), buff_transmit);
 
 
     LCD_SetLayer(LCD_FOREGROUND_LAYER);
-    sprintf( (char *)buff_transmit,"output=%f           ",output);
+    sprintf( (char *)buff_transmit,"d=%f           ",derivative);
     LCD_DisplayStringLine(LINE(6), buff_transmit);
 
 
     LCD_SetLayer(LCD_FOREGROUND_LAYER);
-    sprintf( (char *)buff_transmit,"Angle=%f             ",angle);
+    sprintf( (char *)buff_transmit,"error=%f             ",error);
     LCD_DisplayStringLine(LINE(7), buff_transmit);
+
+
+    LCD_SetLayer(LCD_FOREGROUND_LAYER);
+    sprintf( (char *)buff_transmit,"output=%f           ",output);
+    LCD_DisplayStringLine(LINE(8), buff_transmit);
+
+
+    LCD_SetLayer(LCD_FOREGROUND_LAYER);
+    sprintf( (char *)buff_transmit,"Angle=%f             ",angle);
+    LCD_DisplayStringLine(LINE(3), buff_transmit);
 
 
     LCD_SetLayer(LCD_FOREGROUND_LAYER);  
     sprintf( (char *)buff_transmit,"Angle0=%f             ",angle0);
-    LCD_DisplayStringLine(LINE(8), buff_transmit);
+    LCD_DisplayStringLine(LINE(4), buff_transmit);
 
 
     LCD_SetLayer(LCD_FOREGROUND_LAYER);  
     sprintf( (char *)buff_transmit,"dt=%f             ",dt);
-    LCD_DisplayStringLine(LINE(9), buff_transmit);
+    LCD_DisplayStringLine(LINE(12), buff_transmit);
 
     float frequency=1/dt;
 
     LCD_SetLayer(LCD_FOREGROUND_LAYER);
-    sprintf( (char *)buff_transmit,"Hz=%f             ",frequency);
+    sprintf( (char *)buff_transmit,"X1=%f             ",X1);
     LCD_DisplayStringLine(LINE(10), buff_transmit);
 
 
     LCD_SetLayer(LCD_FOREGROUND_LAYER);
-    sprintf( (char *)buff_transmit,"Angle0=%f     ",angle0);
+    sprintf( (char *)buff_transmit,"gyrox=%f     ",gyrox);
     LCD_DisplayStringLine(LINE(11), buff_transmit);
 
 
     LCD_SetLayer(LCD_FOREGROUND_LAYER);
-    sprintf( (char *)buff_transmit,"Angle=%f     ",angle);
-    LCD_DisplayStringLine(LINE(12), buff_transmit);
+    sprintf( (char *)buff_transmit,"Hz=%f     ",frequency);
+    LCD_DisplayStringLine(LINE(9), buff_transmit);
 
 
 
